@@ -210,17 +210,17 @@ validator {
 
     let mint = from_minted_value(mint)
 
-    let minted_assets =
+    let minted_assets: List<Pair<ByteArray, Int>> =
       mint
         |> value.tokens(policy_id)
-        |> dict.to_list()
+        |> dict.to_pairs()
 
     when redeemer is {
       BurnTokens ->
         list.all(
           minted_assets,
           fn(asset) {
-            let (_, amount) = asset
+            let Pair(_, amount)  = asset
             amount == -1
           },
         )
@@ -285,22 +285,22 @@ fn check_partial_withdraw_outputs(
   expect State { status, .. }: State = remainder_datum
   expect status == Locked
   // make sure no ADA is added to the state machine when unlocking
-  expect [(in_ada_policy, in_ada_amount), ..in_rest_values] =
+  expect [Pair(in_ada_policy, in_ada_amount), ..in_rest_values] =
     input_value
       |> to_dict
-      |> dict.to_list
+      |> dict.to_pairs
 
   expect Some(in_ada_quantity) = dict.get(in_ada_amount, ada_token_name)
 
-  expect [(rem_ada_policy, rem_ada_amount), ..] =
+  expect [Pair(rem_ada_policy, rem_ada_amount), ..] =
     rem_value
       |> to_dict
-      |> dict.to_list
+      |> dict.to_pairs
 
-  expect [(out_ada_policy, out_ada_amount), ..] =
+  expect [Pair(out_ada_policy, out_ada_amount), ..] =
     out_value
       |> to_dict
-      |> dict.to_list
+      |> dict.to_pairs
 
   expect Some(out_ada_quantity) = dict.get(out_ada_amount, ada_token_name)
   expect Some(rem_ada_quantity) = dict.get(rem_ada_amount, ada_token_name)
@@ -316,7 +316,7 @@ fn check_partial_withdraw_outputs(
       |> without_lovelace
       |> merge(rem_value_no_ada)
       |> to_dict
-      |> dict.to_list
+      |> dict.to_pairs
 
   // Check other values have value conserved
   expect in_rest_values == total_value_no_ada
@@ -333,17 +333,17 @@ fn check_full_withdraw_outputs(
 
   let Output { address: out_address, value: out_value, .. } = unlocking_output
 
-  expect [(in_ada_policy, in_ada_amount), ..in_rest_values] =
+  expect [Pair(in_ada_policy, in_ada_amount), ..in_rest_values] =
     input_value
       |> to_dict
-      |> dict.to_list
+      |> dict.to_pairs
 
   expect Some(in_ada_quantity) = dict.get(in_ada_amount, ada_token_name)
 
-  expect [(out_ada_policy, out_ada_amount), ..out_rest_values] =
+  expect [Pair(out_ada_policy, out_ada_amount), ..out_rest_values] =
     out_value
       |> to_dict
-      |> dict.to_list
+      |> dict.to_pairs
 
   expect Some(out_ada_quantity) = dict.get(out_ada_amount, ada_token_name)
 
@@ -362,14 +362,14 @@ fn check_full_withdraw_outputs(
 // Alternatively allow for token burning
 // Otherwise fail
 fn check_mint_to_output_datums(
-  minted_assets: List<(ByteArray, Int)>,
+  minted_assets: List<Pair<ByteArray, Int>>,
   outputs: List<Output>,
   expected_assets: List<ByteArray>,
   validator_cred: PaymentCredential,
 ) -> Bool {
   when minted_assets is {
     [] -> True
-    [(minted_asset_name, quantity), ..rest_assets] ->
+    [Pair(minted_asset_name, quantity), ..rest_assets] ->
       if quantity == 1 {
         // 1) ensure the expected asset exists 
         expect
